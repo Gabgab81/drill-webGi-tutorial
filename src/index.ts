@@ -26,16 +26,27 @@ import {
 } from "webgi";
 import "./styles.css";
 
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/all";
+
+gsap.registerPlugin(ScrollTrigger)
+
 async function setupViewer(){
 
     // Initialize the viewer
     const viewer = new ViewerApp({
         canvas: document.getElementById('webgi-canvas') as HTMLCanvasElement,
+        useRgbm: false,
     })
 
     // Add some plugins
     const manager = await viewer.addPlugin(AssetManagerPlugin)
-
+    // console.log("index")
+    // console.log(viewer)
+    const camera = viewer.scene.activeCamera;
+    // console.log(camera)
+    const position = camera.position;
+    const target = camera.target;
     // Add a popup(in HTML) with download progress when any asset is downloading.
     await viewer.addPlugin(AssetManagerBasicPopupPlugin)
 
@@ -63,7 +74,7 @@ async function setupViewer(){
     // This must be called once after all plugins are added.
     viewer.renderer.refreshPipeline()
 
-    await manager.addFromPath("./assets/classic-watch.glb")
+    await manager.addFromPath("./assets/drill.glb")
 
     // Load an environment map if not set in the glb file
     // await viewer.scene.setEnvironment(
@@ -77,6 +88,41 @@ async function setupViewer(){
     // Add plugins to the UI to see their settings.
     uiPlugin.setupPlugins<IViewerPlugin>(TonemapPlugin, CanvasSnipperPlugin)
 
+    function setupScrollanimation(){
+      const tl = gsap.timeline();
+
+      // first section
+
+      tl.to(position, {
+        x: 5, z: -3,
+        duration: 4,
+        ScrollTrigger: { 
+          trigger: '.second',
+          markers: true
+        },
+        onUpdate
+      })
+    }
+
+    setupScrollanimation()
+
+    // WEBGI Update
+    let needsUpdate = true
+
+    function onUpdate() {
+      needsUpdate = true;
+      viewer.renderer.resetShadows();
+    }
+
+    viewer.addEventListener('preFrame', () => {
+      if(needsUpdate){
+        camera.positionUpdated(false)
+        camera.targetUpdated(true)
+        needsUpdate = false
+      }
+    })
 }
+
+
 
 setupViewer()
